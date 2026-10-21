@@ -1,0 +1,22 @@
+#!/bin/sh
+# Blocks commits whose staged changes contain secrets (tokens, keys, passwords).
+# Bypass for a known false positive: add it to .gitleaks.toml allowlist, not --no-verify.
+set -eu
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "secret-guard: gitleaks not found. Install it (brew install gitleaks) and retry." >&2
+  exit 1
+fi
+
+# Repo-level config wins if present, otherwise the shared one next to this hook.
+here=$(cd "$(dirname "$0")" && pwd)
+cfg="$here/../.gitleaks.toml"
+[ -f "$(git rev-parse --show-toplevel)/.gitleaks.toml" ] && cfg="$(git rev-parse --show-toplevel)/.gitleaks.toml"
+
+gitleaks git --pre-commit --staged --redact --no-banner -v --config "$cfg"
+
+# A global core.hooksPath replaces each repo's own .git/hooks, so run that one too.
+local_hook="$(git rev-parse --git-path hooks/pre-commit)"
+if [ -x "$local_hook" ] && [ "$(cd "$(dirname "$local_hook")" && pwd)/pre-commit" != "$here/pre-commit" ]; then
+  exec "$local_hook" "$@"
+fi

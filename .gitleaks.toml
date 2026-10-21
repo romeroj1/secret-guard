@@ -1,0 +1,16 @@
+title = "secret-guard"
+
+[extend]
+useDefault = true   # all built-in rules (AWS, GitHub, Slack, private keys, JWTs, ...)
+
+# Add company-specific token formats here, for example:
+# [[rules]]
+# id = "internal-api-key"
+# description = "Internal API key"
+# regex = '''acme_[A-Za-z0-9]{32}'''
+
+[allowlist]
+description = "Known false positives"
+paths = [
+  '''(^|/)testdata/''',
+]
